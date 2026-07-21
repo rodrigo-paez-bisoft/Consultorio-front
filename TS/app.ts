@@ -5,8 +5,6 @@ async function cargarFormulario(nombre: string): Promise<void> {
     const contenedor = document.getElementById("contenedorFormulario");
 
     if (contenedor) {
-        contenedor.innerHTML = html;
+        contenedor.innerHTML += html; // Usa += en lugar de =
     }
 }
-cargarFormulario("doctor-form.html");
-cargarFormulario("Paciente-form.html");
