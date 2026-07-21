@@ -1,13 +1,13 @@
-async function cargarFormulario(nombreArchivo) {
+async function cargarFormulario(nombreArchivo, contenedorId) {
     const respuesta = await fetch(`Forms/${nombreArchivo}`);
     const html = await respuesta.text();
-    const contenedor = document.getElementById("contenedorFormulario");
+    const contenedor = document.getElementById(contenedorId);
     if (contenedor) {
-        contenedor.innerHTML += html; // Usa += para agregar en lugar de sobrescribir
+        contenedor.innerHTML = html;
     }
 }
 
-// Puedes agregar cuantos formularios quieras
-cargarFormulario("doctor-form.html");
-cargarFormulario("Paciente-form.html");
-//cargarFormulario("otro-formulario.html"); // Agrega más aquí
+// Cargar todos los formularios al iniciar
+cargarFormulario("doctor-form.html", "contenedorDoctor");
+cargarFormulario("Paciente-form.html", "contenedorPaciente");
+cargarFormulario("Sala-form.html", "contenedorSala"); // Agrega más aquí

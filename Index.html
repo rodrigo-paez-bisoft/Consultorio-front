@@ -1,29 +1,53 @@
 <!DOCTYPE html>
 <html lang='en'>
 <head>
-	<meta charset='utf-8'>
-	<meta name='viewport' content='width=device-width, initial-scale=1'>
-	<title>Page Title</title>
-	
-	<link rel="stylesheet" href="Style/Style.css">
-	<!-- bootstrap -->
-	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <title>Page Title</title>
+    
+    <link rel="stylesheet" href="Style/Style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="container">
-	<nav class="navbar bg-body-tertiary">
-		<div class="container-fluid">
-			<a class="navbar-brand">Navbar</a>
-			
-		</div>
-	</nav>
+    <nav class="navbar bg-body-tertiary">
+        <div class="container-fluid">
+            <a class="navbar-brand">Sistema de Registro</a>
+        </div>
+    </nav>
 
-<!-- TS -->
-	
-    <div id="contenedorFormulario"></div>
+    <!-- Pestañas de Bootstrap -->
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="doctor-tab" data-bs-toggle="tab" data-bs-target="#doctor" type="button" role="tab">Doctor</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="paciente-tab" data-bs-toggle="tab" data-bs-target="#paciente" type="button" role="tab">Paciente</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="Sala-tab" data-bs-toggle="tab" data-bs-target="#Sala" type="button" role="tab">Sala</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="cita-tab" data-bs-toggle="tab" data-bs-target="#cita" type="button" role="tab">Cita</button>
+        </li>
+    </ul>
+    
+    <!-- Contenido de las pestañas -->
+    <div class="tab-content" id="myTabContent">
+        <div class="tab-pane fade show active" id="doctor" role="tabpanel">
+            <div id="contenedorDoctor"></div>
+        </div>
+        <div class="tab-pane fade" id="paciente" role="tabpanel">
+            <div id="contenedorPaciente"></div>
+        </div>
+        <div class="tab-pane fade" id="Sala" role="tabpanel">
+            <div id="contenedorSala"></div>
+        </div>
+        <div class="tab-pane fade" id="cita" role="tabpanel">
+            <div id="contenedorCita"></div>
+        </div>
+    </div>
 
-    <script type="module" src="TS/app.js"></script>
-	<!-- En Index.html -->
-
-	
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="TS/app.js"></script>
 </body>
 </html>
