@@ -1,0 +1,447 @@
+<div>
+    <h5>Actualizar Paciente</h5>
+    
+    <!-- Formulario para buscar por GUID -->
+    <form id="buscarPacienteForm" class="row g-3 mb-4">
+        <div class="col-8">
+            <label for="updatePacienteGuid" class="form-label">ID del Paciente (GUID)</label>
+            <input type="text" 
+                   class="form-control" 
+                   id="updatePacienteGuid" 
+                   placeholder="Ej: 123e4567-e89b-12d3-a456-426614174000"
+                   pattern="^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$">
+            <small class="text-muted">Ingresa el GUID del paciente que deseas actualizar</small>
+        </div>
+        <div class="col-4 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="bi bi-search"></i> Buscar Paciente
+            </button>
+        </div>
+    </form>
+
+    <!-- Div donde se mostrarán los datos del paciente para editar -->
+    <div id="pacienteUpdateInfo" class="mt-3">
+        <!-- Los datos se mostrarán aquí cuando se consulte el paciente -->
+    </div>
+
+    <!-- Mensajes de feedback -->
+    <div id="mensajeUpdate" class="mt-3"></div>
+</div>
+
+<script>
+    (function() {
+        const buscarForm = document.getElementById('buscarPacienteForm');
+        const guidInput = document.getElementById('updatePacienteGuid');
+        const infoDiv = document.getElementById('pacienteUpdateInfo');
+        const mensajeDiv = document.getElementById('mensajeUpdate');
+
+        // Variable para almacenar el paciente actual
+        let pacienteActual = null;
+
+        // ========== MOSTRAR MENSAJES ==========
+        function mostrarMensaje(tipo, texto) {
+            const colores = {
+                success: 'success',
+                danger: 'danger',
+                info: 'info',
+                warning: 'warning'
+            };
+            
+            mensajeDiv.innerHTML = `
+                <div class="alert alert-${colores[tipo] || 'info'} alert-dismissible fade show" role="alert">
+                    ${texto}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            setTimeout(() => {
+                const alert = mensajeDiv.querySelector('.alert');
+                if (alert) {
+                    alert.classList.remove('show');
+                    setTimeout(() => mensajeDiv.innerHTML = '', 300);
+                }
+            }, 5000);
+        }
+
+        // ========== MOSTRAR FORMULARIO DE EDICIÓN ==========
+        function mostrarFormularioEdicion(paciente) {
+            pacienteActual = paciente;
+
+            // Formatear fecha para el input date
+            function formatearFechaInput(fecha) {
+                if (!fecha) return '';
+                try {
+                    const d = new Date(fecha);
+                    return d.toISOString().split('T')[0];
+                } catch {
+                    return '';
+                }
+            }
+
+            infoDiv.innerHTML = `
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-pencil-square"></i> Editar Paciente</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="editarPacienteForm" class="row g-3">
+                            <!-- ID (solo lectura) -->
+                            <div class="col-12">
+                                <label class="fw-bold text-muted small">ID del Paciente</label>
+                                <input type="text" 
+                                       class="form-control bg-light" 
+                                       value="${paciente.id || paciente.pacienteId || 'N/A'}" 
+                                       disabled>
+                                <small class="text-muted">El ID no se puede modificar</small>
+                            </div>
+                            
+                            <!-- Nombre -->
+                            <div class="col-md-6">
+                                <label for="editNombre" class="form-label">Nombre</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="editNombre" 
+                                       value="${paciente.nombre || paciente.name || ''}"
+                                       placeholder="Ingresa el nombre del paciente"
+                                       required>
+                            </div>
+                            
+                            <!-- Apellido -->
+                            <div class="col-md-6">
+                                <label for="editApellido" class="form-label">Apellido</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="editApellido" 
+                                       value="${paciente.apellido || paciente.lastName || ''}"
+                                       placeholder="Ingresa el apellido del paciente"
+                                       required>
+                            </div>
+
+                            <!-- Documento -->
+                            <div class="col-md-6">
+                                <label for="editDocumento" class="form-label">Documento</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="editDocumento" 
+                                       value="${paciente.documento || paciente.document || ''}"
+                                       placeholder="Ej: 12345678">
+                            </div>
+
+                            <!-- Fecha de Nacimiento -->
+                            <div class="col-md-6">
+                                <label for="editFechaNacimiento" class="form-label">Fecha de Nacimiento</label>
+                                <input type="date" 
+                                       class="form-control" 
+                                       id="editFechaNacimiento" 
+                                       value="${formatearFechaInput(paciente.fechaNacimiento || paciente.birthDate)}">
+                            </div>
+
+                            <!-- Género -->
+                            <div class="col-md-6">
+                                <label for="editGenero" class="form-label">Género</label>
+                                <select class="form-select" id="editGenero">
+                                    <option value="">Selecciona un género...</option>
+                                    <option value="Masculino" ${paciente.genero === 'Masculino' ? 'selected' : ''}>Masculino</option>
+                                    <option value="Femenino" ${paciente.genero === 'Femenino' ? 'selected' : ''}>Femenino</option>
+                                    <option value="Otro" ${paciente.genero === 'Otro' ? 'selected' : ''}>Otro</option>
+                                </select>
+                            </div>
+
+                            <!-- Teléfono -->
+                            <div class="col-md-6">
+                                <label for="editTelefono" class="form-label">Teléfono</label>
+                                <input type="tel" 
+                                       class="form-control" 
+                                       id="editTelefono" 
+                                       value="${paciente.telefono || paciente.phone || ''}"
+                                       placeholder="Ej: 123456789">
+                            </div>
+
+                            <!-- Email -->
+                            <div class="col-md-6">
+                                <label for="editEmail" class="form-label">Email</label>
+                                <input type="email" 
+                                       class="form-control" 
+                                       id="editEmail" 
+                                       value="${paciente.email || ''}"
+                                       placeholder="ejemplo@correo.com">
+                            </div>
+
+                            <!-- Dirección -->
+                            <div class="col-md-6">
+                                <label for="editDireccion" class="form-label">Dirección</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="editDireccion" 
+                                       value="${paciente.direccion || paciente.address || ''}"
+                                       placeholder="Calle, número, ciudad">
+                            </div>
+
+                            <!-- Contacto de Emergencia -->
+                            <div class="col-md-6">
+                                <label for="editContactoEmergencia" class="form-label">Contacto de Emergencia</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="editContactoEmergencia" 
+                                       value="${paciente.contactoEmergencia || paciente.emergencyContact || ''}"
+                                       placeholder="Nombre del contacto">
+                            </div>
+
+                            <!-- Teléfono de Emergencia -->
+                            <div class="col-md-6">
+                                <label for="editTelefonoEmergencia" class="form-label">Teléfono de Emergencia</label>
+                                <input type="tel" 
+                                       class="form-control" 
+                                       id="editTelefonoEmergencia" 
+                                       value="${paciente.telefonoEmergencia || paciente.emergencyPhone || ''}"
+                                       placeholder="Teléfono de emergencia">
+                            </div>
+
+                            <!-- Alergias -->
+                            <div class="col-12">
+                                <label for="editAlergias" class="form-label">Alergias</label>
+                                <textarea class="form-control" 
+                                          id="editAlergias" 
+                                          rows="2"
+                                          placeholder="Ingresa las alergias del paciente">${paciente.alergias || paciente.allergies || ''}</textarea>
+                            </div>
+
+                            <!-- Estado (Activo/Inactivo) -->
+                            <div class="col-12">
+                                <label for="editEstado" class="form-label">Estado</label>
+                                <select class="form-select" id="editEstado">
+                                    <option value="true" ${paciente.activo !== false ? 'selected' : ''}>Activo</option>
+                                    <option value="false" ${paciente.activo === false ? 'selected' : ''}>Inactivo</option>
+                                </select>
+                            </div>
+
+                            <!-- Botones de acción -->
+                            <div class="col-12 mt-3">
+                                <hr>
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="bi bi-check-circle"></i> Guardar Cambios
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="limpiarFormulario()">
+                                        <i class="bi bi-arrow-counterclockwise"></i> Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+
+            // Evento para el formulario de edición
+            const editarForm = document.getElementById('editarPacienteForm');
+            editarForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                actualizarPaciente();
+            });
+        }
+
+        // ========== LIMPIAR FORMULARIO ==========
+        window.limpiarFormulario = function() {
+            infoDiv.innerHTML = '';
+            pacienteActual = null;
+            guidInput.value = '';
+            mostrarMensaje('info', 'Formulario limpiado');
+        };
+
+        // ========== ACTUALIZAR PACIENTE ==========
+        async function actualizarPaciente() {
+            const nombre = document.getElementById('editNombre').value.trim();
+            const apellido = document.getElementById('editApellido').value.trim();
+            const documento = document.getElementById('editDocumento').value.trim();
+            const fechaNacimiento = document.getElementById('editFechaNacimiento').value;
+            const genero = document.getElementById('editGenero').value;
+            const telefono = document.getElementById('editTelefono').value.trim();
+            const email = document.getElementById('editEmail').value.trim();
+            const direccion = document.getElementById('editDireccion').value.trim();
+            const contactoEmergencia = document.getElementById('editContactoEmergencia').value.trim();
+            const telefonoEmergencia = document.getElementById('editTelefonoEmergencia').value.trim();
+            const alergias = document.getElementById('editAlergias').value.trim();
+            const estado = document.getElementById('editEstado').value === 'true';
+
+            // Validar campos obligatorios
+            if (!nombre) {
+                mostrarMensaje('warning', '⚠️ El nombre es obligatorio');
+                return;
+            }
+
+            if (!apellido) {
+                mostrarMensaje('warning', '⚠️ El apellido es obligatorio');
+                return;
+            }
+
+            // Construir objeto de actualización
+            const pacienteId = pacienteActual.id || pacienteActual.pacienteId;
+            const datosActualizar = {
+                id: pacienteId,
+                nombre: nombre,
+                apellido: apellido,
+                documento: documento || null,
+                fechaNacimiento: fechaNacimiento || null,
+                genero: genero || null,
+                telefono: telefono || null,
+                email: email || null,
+                direccion: direccion || null,
+                contactoEmergencia: contactoEmergencia || null,
+                telefonoEmergencia: telefonoEmergencia || null,
+                alergias: alergias || null,
+                activo: estado
+            };
+
+            try {
+                mostrarMensaje('info', '⏳ Actualizando paciente...');
+
+                // URL de la API - AJUSTAR SEGÚN TU ENDPOINT
+                const url = `https://localhost:7285/api/Paciente/${pacienteId}`;
+                // const url = `/api/Paciente/${pacienteId}`;
+
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(datosActualizar)
+                });
+
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        throw new Error(`Paciente con ID ${pacienteId} no encontrado`);
+                    }
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
+                }
+
+                const resultado = await response.json();
+                
+                mostrarMensaje('success', `✅ Paciente "${resultado.nombre} ${resultado.apellido}" actualizado correctamente`);
+                
+                // Actualizar los datos mostrados con la respuesta
+                if (resultado) {
+                    mostrarFormularioEdicion(resultado);
+                }
+
+            } catch (error) {
+                console.error('Error al actualizar paciente:', error);
+                mostrarMensaje('danger', `❌ ${error.message}`);
+            }
+        }
+
+        // ========== BUSCAR PACIENTE ==========
+        async function buscarPaciente(guid) {
+            // Limpiar datos anteriores
+            infoDiv.innerHTML = '';
+            pacienteActual = null;
+            
+            // Validar GUID
+            if (!guid) {
+                mostrarMensaje('warning', '⚠️ Por favor, ingresa un ID de paciente');
+                return;
+            }
+
+            // Validar formato GUID
+            const guidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+            if (!guidRegex.test(guid)) {
+                mostrarMensaje('danger', '❌ Formato de GUID inválido. Usa el formato: 00000000-0000-0000-0000-000000000000');
+                return;
+            }
+
+            try {
+                mostrarMensaje('info', '⏳ Buscando paciente...');
+                
+                // URL de la API - AJUSTAR SEGÚN TU ENDPOINT
+                const url = `https://localhost:7285/api/Paciente/${guid}`;
+                // const url = `/api/Paciente/${guid}`;
+                
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        throw new Error(`Paciente con ID ${guid} no encontrado`);
+                    }
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+                
+                const paciente = await response.json();
+                
+                if (paciente) {
+                    mostrarFormularioEdicion(paciente);
+                    mostrarMensaje('success', `✅ Paciente "${paciente.nombre || paciente.name} ${paciente.apellido || ''}" encontrado. Puedes editar los campos.`);
+                } else {
+                    throw new Error('No se recibieron datos del paciente');
+                }
+                
+            } catch (error) {
+                console.error('Error al buscar paciente:', error);
+                mostrarMensaje('danger', `❌ ${error.message}`);
+                infoDiv.innerHTML = `
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-person-x fs-1 d-block mb-2"></i>
+                        Paciente no encontrado
+                    </div>
+                `;
+            }
+        }
+
+        // ========== EVENTOS ==========
+        buscarForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const guid = guidInput.value.trim();
+            buscarPaciente(guid);
+        });
+
+        // Permitir búsqueda con Enter
+        guidInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                buscarForm.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        // Autoformatear GUID mientras se escribe
+        guidInput.addEventListener('input', function(e) {
+            let value = this.value.replace(/[^a-fA-F0-9-]/g, '');
+            value = value.replace(/-{2,}/g, '-');
+            this.value = value;
+        });
+
+    })();
+</script>
+
+<!-- Estilos adicionales -->
+<style>
+    .card {
+        border-radius: 12px;
+        border: none;
+        overflow: hidden;
+    }
+    .card-header {
+        border-bottom: none;
+    }
+    .card-body .fw-bold {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .form-control:disabled {
+        background-color: #e9ecef;
+        cursor: not-allowed;
+    }
+    .alert {
+        border-radius: 8px;
+    }
+    input:focus, select:focus, textarea:focus {
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        border-color: #86b7fe;
+    }
+    .btn-outline-secondary:hover {
+        background-color: #6c757d;
+        color: white;
+    }
+    .btn-success:hover {
+        background-color: #1e7e34;
+    }
+</style>

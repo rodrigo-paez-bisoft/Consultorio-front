@@ -3,51 +3,82 @@
 <head>
     <meta charset='utf-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1'>
-    <title>Page Title</title>
+    <title>Sistema Consultorio</title>
     
     <link rel="stylesheet" href="Style/Style.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 <body class="container">
     <nav class="navbar bg-body-tertiary">
         <div class="container-fluid">
-            <a class="navbar-brand">Sistema de Registro</a>
+            <a class="navbar-brand">Sistema consultorio</a>
         </div>
     </nav>
 
-    <!-- Pestañas de Bootstrap -->
-    <ul class="nav nav-tabs" id="myTab" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="doctor-tab" data-bs-toggle="tab" data-bs-target="#doctor" type="button" role="tab">Doctor</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="paciente-tab" data-bs-toggle="tab" data-bs-target="#paciente" type="button" role="tab">Paciente</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="Sala-tab" data-bs-toggle="tab" data-bs-target="#Sala" type="button" role="tab">Sala</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="cita-tab" data-bs-toggle="tab" data-bs-target="#cita" type="button" role="tab">Cita</button>
-        </li>
-    </ul>
-    
-    <!-- Contenido de las pestañas -->
-    <div class="tab-content" id="myTabContent">
-        <div class="tab-pane fade show active" id="doctor" role="tabpanel">
-            <div id="contenedorDoctor"></div>
+    <!-- Acordeón principal -->
+    <div class="accordion mt-4" id="mainAccordion">
+        
+        <!-- DOCTORES -->
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDoctores" aria-expanded="true">
+                    <strong>👨‍⚕️ Gestión de Doctores</strong>
+                </button>
+            </h2>
+            <div id="collapseDoctores" class="accordion-collapse collapse show" data-bs-parent="#mainAccordion">
+                <div class="accordion-body">
+                    <div id="contenedorDoctores"></div>
+                </div>
+            </div>
         </div>
-        <div class="tab-pane fade" id="paciente" role="tabpanel">
-            <div id="contenedorPaciente"></div>
+
+        <!-- PACIENTES -->
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePacientes" aria-expanded="false">
+                    <strong>👤 Gestión de Pacientes</strong>
+                </button>
+            </h2>
+            <div id="collapsePacientes" class="accordion-collapse collapse" data-bs-parent="#mainAccordion">
+                <div class="accordion-body">
+                    <div id="contenedorPacientes"></div>
+                </div>
+            </div>
         </div>
-        <div class="tab-pane fade" id="Sala" role="tabpanel">
-            <div id="contenedorSala"></div>
+
+        <!-- SALAS -->
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSalas" aria-expanded="false">
+                    <strong>🏥 Gestión de Salas</strong>
+                </button>
+            </h2>
+            <div id="collapseSalas" class="accordion-collapse collapse" data-bs-parent="#mainAccordion">
+                <div class="accordion-body">
+                    <div id="contenedorSalas"></div>
+                </div>
+            </div>
         </div>
-        <div class="tab-pane fade" id="cita" role="tabpanel">
-            <div id="contenedorCita"></div>
+
+        <!-- CITAS (comentada - NO INTEGRADA) -->
+        
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCitas" aria-expanded="false">
+                    <strong>📅 Gestión de Citas</strong>
+                </button>
+            </h2>
+            <div id="collapseCitas" class="accordion-collapse collapse" data-bs-parent="#mainAccordion">
+                <div class="accordion-body">
+                    <div id="contenedorCitas"></div>
+                </div>
+            </div>
         </div>
+       
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="TS/app.js"></script>
+    <script type="module" src="TS/app.js"></script>
 </body>
 </html>

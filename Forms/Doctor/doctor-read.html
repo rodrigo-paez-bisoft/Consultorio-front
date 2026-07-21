@@ -1,0 +1,229 @@
+<div>
+    <h5>Consultar Doctor por ID</h5>
+    
+    <form id="consultarDoctorForm" class="row g-3">
+        <!-- Campo para ingresar el GUID -->
+        <div class="col-8">
+            <label for="doctorGuid" class="form-label">ID del Doctor (GUID)</label>
+            <input type="text" 
+                   class="form-control" 
+                   id="doctorGuid" 
+                   placeholder="Ej: 123e4567-e89b-12d3-a456-426614174000"
+                   pattern="^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$">
+            <small class="text-muted">Formato: 00000000-0000-0000-0000-000000000000</small>
+        </div>
+        <div class="col-4 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="bi bi-search"></i> Consultar
+            </button>
+        </div>
+    </form>
+
+    <!-- Div donde se mostrarán los datos del doctor -->
+    <div id="doctorInfo" class="mt-4">
+        <!-- Los datos se mostrarán aquí -->
+    </div>
+
+    <!-- Mensajes de feedback -->
+    <div id="mensajeConsulta" class="mt-3"></div>
+</div>
+
+<script>
+    (function() {
+        const form = document.getElementById('consultarDoctorForm');
+        const guidInput = document.getElementById('doctorGuid');
+        const infoDiv = document.getElementById('doctorInfo');
+        const mensajeDiv = document.getElementById('mensajeConsulta');
+
+        // ========== MOSTRAR MENSAJES ==========
+        function mostrarMensaje(tipo, texto) {
+            const colores = {
+                success: 'success',
+                danger: 'danger',
+                info: 'info',
+                warning: 'warning'
+            };
+            
+            mensajeDiv.innerHTML = `
+                <div class="alert alert-${colores[tipo] || 'info'} alert-dismissible fade show" role="alert">
+                    ${texto}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            setTimeout(() => {
+                const alert = mensajeDiv.querySelector('.alert');
+                if (alert) {
+                    alert.classList.remove('show');
+                    setTimeout(() => mensajeDiv.innerHTML = '', 300);
+                }
+            }, 5000);
+        }
+
+        // ========== MOSTRAR DATOS DEL DOCTOR ==========
+        function mostrarDoctor(doctor) {
+            infoDiv.innerHTML = `
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-person-badge"></i> Información del Doctor</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="fw-bold text-muted small">ID</label>
+                                <p class="border-bottom pb-2">${doctor.id || 'N/A'}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="fw-bold text-muted small">Nombre</label>
+                                <p class="border-bottom pb-2">${doctor.nombre || 'N/A'}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="fw-bold text-muted small">Especialidad</label>
+                                <p class="border-bottom pb-2">
+                                    <span class="badge bg-info">${doctor.especialidad || 'N/A'}</span>
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="fw-bold text-muted small">Estado</label>
+                                <p class="border-bottom pb-2">
+                                    <span class="badge ${doctor.activo !== false ? 'bg-success' : 'bg-danger'}">
+                                        ${doctor.activo !== false ? 'Activo' : 'Inactivo'}
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="fw-bold text-muted small">Teléfono</label>
+                                <p class="border-bottom pb-2">${doctor.telefono || 'N/A'}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="fw-bold text-muted small">Email</label>
+                                <p class="border-bottom pb-2">${doctor.email || 'N/A'}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="fw-bold text-muted small">Fecha de Registro</label>
+                                <p class="border-bottom pb-2">${doctor.fechaRegistro ? new Date(doctor.fechaRegistro).toLocaleDateString() : 'N/A'}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="fw-bold text-muted small">Última Actualización</label>
+                                <p class="border-bottom pb-2">${doctor.fechaActualizacion ? new Date(doctor.fechaActualizacion).toLocaleDateString() : 'N/A'}</p>
+                            </div>
+                            <div class="col-12">
+                                <label class="fw-bold text-muted small">Dirección</label>
+                                <p class="border-bottom pb-2">${doctor.direccion || 'N/A'}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ========== CONSULTAR DOCTOR ==========
+        async function consultarDoctor(guid) {
+            // Limpiar datos anteriores
+            infoDiv.innerHTML = '';
+            
+            // Validar GUID
+            if (!guid) {
+                mostrarMensaje('warning', '⚠️ Por favor, ingresa un ID de doctor');
+                return;
+            }
+
+            // Validar formato GUID
+            const guidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+            if (!guidRegex.test(guid)) {
+                mostrarMensaje('danger', '❌ Formato de GUID inválido. Usa el formato: 00000000-0000-0000-0000-000000000000');
+                return;
+            }
+
+            try {
+                mostrarMensaje('info', '⏳ Consultando doctor...');
+                
+                // URL de la API - AJUSTAR SEGÚN TU ENDPOINT
+                const url = `https://localhost:7285/api/Doctor/${guid}`;
+                // const url = `/api/Doctor/${guid}`;
+                
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        throw new Error(`Doctor con ID ${guid} no encontrado`);
+                    }
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+                
+                const doctor = await response.json();
+                
+                // Verificar si la respuesta tiene los datos esperados
+                if (doctor) {
+                    mostrarDoctor(doctor);
+                    mostrarMensaje('success', '✅ Doctor encontrado correctamente');
+                } else {
+                    throw new Error('No se recibieron datos del doctor');
+                }
+                
+            } catch (error) {
+                console.error('Error al consultar doctor:', error);
+                mostrarMensaje('danger', `❌ ${error.message}`);
+                infoDiv.innerHTML = `
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-person-x fs-1 d-block mb-2"></i>
+                        Doctor no encontrado
+                    </div>
+                `;
+            }
+        }
+
+        // ========== EVENTOS ==========
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const guid = guidInput.value.trim();
+            consultarDoctor(guid);
+        });
+
+        // Permitir consulta con Enter
+        guidInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                form.dispatchEvent(new Event('submit'));
+            }
+        });
+
+    })();
+</script>
+
+<!-- Estilos adicionales -->
+<style>
+    .card {
+        border-radius: 12px;
+        border: none;
+        overflow: hidden;
+    }
+    .card-header {
+        border-bottom: none;
+    }
+    .card-body p {
+        font-size: 1rem;
+        margin-bottom: 0.25rem;
+        font-weight: 500;
+    }
+    .card-body .fw-bold {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .border-bottom {
+        border-bottom: 1px solid #e9ecef !important;
+        padding-bottom: 8px;
+    }
+    .badge {
+        font-size: 0.85rem;
+        padding: 0.35rem 0.65rem;
+    }
+    .alert {
+        border-radius: 8px;
+    }
+    input:focus {
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        border-color: #86b7fe;
+    }
+</style>

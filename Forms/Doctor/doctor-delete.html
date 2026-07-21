@@ -1,0 +1,311 @@
+<div>
+    <h5>Eliminar Doctor (Eliminación Lógica)</h5>
+    
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i>
+        <strong>Eliminación Lógica:</strong> El doctor será desactivado pero su información permanecerá en el sistema.
+    </div>
+
+    <!-- Formulario para buscar por GUID -->
+    <form id="buscarDoctorForm" class="row g-3 mb-4">
+        <div class="col-8">
+            <label for="deleteDoctorGuid" class="form-label">ID del Doctor (GUID)</label>
+            <input type="text" 
+                   class="form-control" 
+                   id="deleteDoctorGuid" 
+                   placeholder="Ej: 123e4567-e89b-12d3-a456-426614174000"
+                   pattern="^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$">
+            <small class="text-muted">Ingresa el GUID del doctor que deseas eliminar</small>
+        </div>
+        <div class="col-4 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="bi bi-search"></i> Buscar Doctor
+            </button>
+        </div>
+    </form>
+
+    <!-- Div donde se mostrarán los datos del doctor para confirmar eliminación -->
+    <div id="doctorDeleteInfo" class="mt-3">
+        <!-- Los datos se mostrarán aquí cuando se consulte el doctor -->
+    </div>
+
+    <!-- Mensajes de feedback -->
+    <div id="mensajeDelete" class="mt-3"></div>
+</div>
+
+<script>
+    (function() {
+        const buscarForm = document.getElementById('buscarDoctorForm');
+        const guidInput = document.getElementById('deleteDoctorGuid');
+        const infoDiv = document.getElementById('doctorDeleteInfo');
+        const mensajeDiv = document.getElementById('mensajeDelete');
+
+        // Variable para almacenar el doctor actual
+        let doctorActual = null;
+
+        // ========== MOSTRAR MENSAJES ==========
+        function mostrarMensaje(tipo, texto) {
+            const colores = {
+                success: 'success',
+                danger: 'danger',
+                info: 'info',
+                warning: 'warning'
+            };
+            
+            mensajeDiv.innerHTML = `
+                <div class="alert alert-${colores[tipo] || 'info'} alert-dismissible fade show" role="alert">
+                    ${texto}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            setTimeout(() => {
+                const alert = mensajeDiv.querySelector('.alert');
+                if (alert) {
+                    alert.classList.remove('show');
+                    setTimeout(() => mensajeDiv.innerHTML = '', 300);
+                }
+            }, 8000);
+        }
+
+        // ========== MOSTRAR CONFIRMACIÓN DE ELIMINACIÓN ==========
+        function mostrarConfirmacionEliminacion(doctor) {
+            doctorActual = doctor;
+
+            infoDiv.innerHTML = `
+                <div class="card shadow-sm border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <strong>¿Estás seguro de que deseas eliminar a este doctor?</strong>
+                            <br>
+                            Esta acción es una <strong>eliminación lógica</strong>. El doctor será desactivado pero su información permanecerá en el sistema.
+                        </div>
+
+                        <div class="row g-3">
+                            <!-- ID -->
+                            <div class="col-md-6">
+                                <label class="fw-bold text-muted small">ID</label>
+                                <p class="border-bottom pb-2">${doctor.id || doctor.doctorId || 'N/A'}</p>
+                            </div>
+                            <!-- Nombre -->
+                            <div class="col-md-6">
+                                <label class="fw-bold text-muted small">Nombre</label>
+                                <p class="border-bottom pb-2"><strong>${doctor.nombre || doctor.name || 'N/A'}</strong></p>
+                            </div>
+                            <!-- Especialidad -->
+                            <div class="col-md-6">
+                                <label class="fw-bold text-muted small">Especialidad</label>
+                                <p class="border-bottom pb-2">
+                                    <span class="badge bg-info">${doctor.especialidad || doctor.specialty || 'N/A'}</span>
+                                </p>
+                            </div>
+                            <!-- Estado -->
+                            <div class="col-md-6">
+                                <label class="fw-bold text-muted small">Estado Actual</label>
+                                <p class="border-bottom pb-2">
+                                    <span class="badge ${doctor.activo !== false ? 'bg-success' : 'bg-danger'}">
+                                        ${doctor.activo !== false ? 'Activo' : 'Inactivo'}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <div class="mt-3">
+                            <hr>
+                            <div class="d-flex gap-2">
+                                <button id="btnEliminarDoctor" class="btn btn-danger">
+                                    <i class="bi bi-trash"></i> Confirmar Eliminación Lógica
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="limpiarFormulario()">
+                                    <i class="bi bi-arrow-counterclockwise"></i> Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Evento para el botón de eliminar
+            document.getElementById('btnEliminarDoctor').addEventListener('click', function() {
+                eliminarDoctor();
+            });
+        }
+
+        // ========== LIMPIAR FORMULARIO ==========
+        window.limpiarFormulario = function() {
+            infoDiv.innerHTML = '';
+            doctorActual = null;
+            guidInput.value = '';
+            mostrarMensaje('info', 'Formulario limpiado');
+        };
+
+        // ========== ELIMINAR DOCTOR (LÓGICO) ==========
+        async function eliminarDoctor() {
+            const doctorId = doctorActual.id || doctorActual.doctorId;
+            const nombre = doctorActual.nombre || doctorActual.name || 'Sin nombre';
+
+            try {
+                mostrarMensaje('info', '⏳ Procesando eliminación lógica...');
+
+                // URL de la API - AJUSTAR SEGÚN TU ENDPOINT
+                const url = `https://localhost:7285/api/Doctor/${doctorId}`;
+                // const url = `/api/Doctor/${doctorId}`;
+
+                const response = await fetch(url, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        throw new Error(`Doctor con ID ${doctorId} no encontrado`);
+                    }
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
+                }
+
+                const resultado = await response.json().catch(() => ({}));
+                
+                mostrarMensaje('success', `✅ Doctor "${nombre}" eliminado lógicamente correctamente`);
+                
+                // Limpiar el formulario después de eliminar
+                setTimeout(() => {
+                    limpiarFormulario();
+                }, 3000);
+
+            } catch (error) {
+                console.error('Error al eliminar doctor:', error);
+                mostrarMensaje('danger', `❌ ${error.message}`);
+            }
+        }
+
+        // ========== BUSCAR DOCTOR ==========
+        async function buscarDoctor(guid) {
+            // Limpiar datos anteriores
+            infoDiv.innerHTML = '';
+            doctorActual = null;
+            
+            // Validar GUID
+            if (!guid) {
+                mostrarMensaje('warning', '⚠️ Por favor, ingresa un ID de doctor');
+                return;
+            }
+
+            // Validar formato GUID
+            const guidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+            if (!guidRegex.test(guid)) {
+                mostrarMensaje('danger', '❌ Formato de GUID inválido. Usa el formato: 00000000-0000-0000-0000-000000000000');
+                return;
+            }
+
+            try {
+                mostrarMensaje('info', '⏳ Buscando doctor...');
+                
+                // URL de la API - AJUSTAR SEGÚN TU ENDPOINT
+                const url = `https://localhost:7285/api/Doctor/${guid}`;
+                // const url = `/api/Doctor/${guid}`;
+                
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        throw new Error(`Doctor con ID ${guid} no encontrado`);
+                    }
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+                
+                const doctor = await response.json();
+                
+                if (doctor) {
+                    // Verificar si el doctor ya está inactivo
+                    if (doctor.activo === false) {
+                        mostrarMensaje('warning', `⚠️ El doctor "${doctor.nombre || doctor.name}" ya se encuentra inactivo`);
+                        infoDiv.innerHTML = `
+                            <div class="text-center text-muted py-4">
+                                <i class="bi bi-person-check fs-1 d-block mb-2"></i>
+                                <p>Este doctor ya fue desactivado anteriormente</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    mostrarConfirmacionEliminacion(doctor);
+                    mostrarMensaje('info', `ℹ️ Doctor "${doctor.nombre || doctor.name}" encontrado. Confirma la eliminación lógica.`);
+                } else {
+                    throw new Error('No se recibieron datos del doctor');
+                }
+                
+            } catch (error) {
+                console.error('Error al buscar doctor:', error);
+                mostrarMensaje('danger', `❌ ${error.message}`);
+                infoDiv.innerHTML = `
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-person-x fs-1 d-block mb-2"></i>
+                        Doctor no encontrado
+                    </div>
+                `;
+            }
+        }
+
+        // ========== EVENTOS ==========
+        buscarForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const guid = guidInput.value.trim();
+            buscarDoctor(guid);
+        });
+
+        // Permitir búsqueda con Enter
+        guidInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                buscarForm.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        // Autoformatear GUID mientras se escribe
+        guidInput.addEventListener('input', function(e) {
+            let value = this.value.replace(/[^a-fA-F0-9-]/g, '');
+            value = value.replace(/-{2,}/g, '-');
+            this.value = value;
+        });
+
+    })();
+</script>
+
+<!-- Estilos adicionales -->
+<style>
+    .card {
+        border-radius: 12px;
+        border: none;
+        overflow: hidden;
+    }
+    .card-header {
+        border-bottom: none;
+    }
+    .card-body .fw-bold {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .border-bottom {
+        border-bottom: 1px solid #e9ecef !important;
+        padding-bottom: 8px;
+    }
+    .alert {
+        border-radius: 8px;
+    }
+    input:focus {
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        border-color: #86b7fe;
+    }
+    .btn-danger:hover {
+        background-color: #bb2d3b;
+    }
+</style>

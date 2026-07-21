@@ -1,0 +1,360 @@
+<div>
+    <h5>Crear Nueva Cita</h5>
+    
+    <form id="createCitaForm" class="row g-3">
+        <!-- Selección de Doctor -->
+        <div class="col-md-6">
+            <label for="selectDoctor" class="form-label">Doctor</label>
+            <select class="form-select" id="selectDoctor" required>
+                <option value="">Selecciona un doctor...</option>
+                <!-- Los datos se cargan dinámicamente desde la API -->
+            </select>
+        </div>
+
+        <!-- Selección de Paciente -->
+        <div class="col-md-6">
+            <label for="selectPaciente" class="form-label">Paciente</label>
+            <select class="form-select" id="selectPaciente" required>
+                <option value="">Selecciona un paciente...</option>
+                <!-- Los datos se cargan dinámicamente desde la API -->
+            </select>
+        </div>
+
+        <!-- Selección de Sala -->
+        <div class="col-md-6">
+            <label for="selectSala" class="form-label">Sala</label>
+            <select class="form-select" id="selectSala" required>
+                <option value="">Selecciona una sala...</option>
+                <!-- Los datos se cargan dinámicamente desde la API -->
+            </select>
+        </div>
+
+        <!-- Fecha y Hora -->
+        <div class="col-md-3">
+            <label for="fechaCita" class="form-label">Fecha</label>
+            <input type="date" class="form-control" id="fechaCita" required>
+        </div>
+        <div class="col-md-3">
+            <label for="horaCita" class="form-label">Hora</label>
+            <input type="time" class="form-control" id="horaCita" required>
+        </div>
+
+        <!-- Duración -->
+        <div class="col-md-6">
+            <label for="duracion" class="form-label">Duración (minutos)</label>
+            <input type="number" class="form-control" id="duracion" placeholder="Ej: 30" min="10" max="120" value="30" required>
+        </div>
+
+        <!-- Motivo -->
+        <div class="col-12">
+            <label for="motivo" class="form-label">Motivo de la Cita</label>
+            <textarea class="form-control" id="motivo" rows="2" placeholder="Describe el motivo de la cita..."></textarea>
+        </div>
+
+        <!-- Estado (opcional) -->
+        <div class="col-md-6">
+            <label for="estadoCita" class="form-label">Estado</label>
+            <select class="form-select" id="estadoCita">
+                <option value="pendiente" selected>Pendiente</option>
+                <option value="confirmada">Confirmada</option>
+                <option value="en-progreso">En Progreso</option>
+                <option value="completada">Completada</option>
+                <option value="cancelada">Cancelada</option>
+                <option value="no-asistio">No Asistió</option>
+            </select>
+        </div>
+
+        <!-- Botón -->
+        <div class="col-12 mt-3">
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Crear Cita
+            </button>
+            <button type="reset" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+            </button>
+        </div>
+    </form>
+
+    <!-- Mensajes de feedback -->
+    <div id="mensajeCita" class="mt-3"></div>
+</div>
+
+<script>
+    (function() {
+        const form = document.getElementById('createCitaForm');
+        const selectDoctor = document.getElementById('selectDoctor');
+        const selectPaciente = document.getElementById('selectPaciente');
+        const selectSala = document.getElementById('selectSala');
+        const fechaInput = document.getElementById('fechaCita');
+        const horaInput = document.getElementById('horaCita');
+        const duracionInput = document.getElementById('duracion');
+        const motivoInput = document.getElementById('motivo');
+        const estadoInput = document.getElementById('estadoCita');
+        const mensajeDiv = document.getElementById('mensajeCita');
+
+        // ========== CONFIGURACIÓN DE URLS ==========
+        // AJUSTA ESTAS URLS SEGÚN TU API
+        const API_URLS = {
+            doctores: 'https://localhost:7285/api/Doctor',
+            pacientes: 'https://localhost:7285/api/Paciente',
+            salas: 'https://localhost:7285/api/Sala',
+            citas: 'https://localhost:7285/api/Cita'
+        };
+
+        // ========== MOSTRAR MENSAJES ==========
+        function mostrarMensaje(tipo, texto) {
+            const colores = {
+                success: 'success',
+                danger: 'danger',
+                info: 'info',
+                warning: 'warning'
+            };
+            
+            mensajeDiv.innerHTML = `
+                <div class="alert alert-${colores[tipo] || 'info'} alert-dismissible fade show" role="alert">
+                    ${texto}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            setTimeout(() => {
+                const alert = mensajeDiv.querySelector('.alert');
+                if (alert) {
+                    alert.classList.remove('show');
+                    setTimeout(() => mensajeDiv.innerHTML = '', 300);
+                }
+            }, 6000);
+        }
+
+        // ========== CARGAR DOCTORES ==========
+        async function cargarDoctores() {
+            try {
+                const response = await fetch(API_URLS.doctores);
+                if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
+                
+                const data = await response.json();
+                const doctores = Array.isArray(data) ? data : (data.data || data.value || []);
+                
+                // Limpiar opciones (mantener el placeholder)
+                selectDoctor.innerHTML = '<option value="">Selecciona un doctor...</option>';
+                
+                doctores.forEach(doctor => {
+                    const option = document.createElement('option');
+                    option.value = doctor.id || doctor.doctorId;
+                    option.textContent = doctor.nombre || doctor.name || 'Sin nombre';
+                    if (doctor.activo === false) {
+                        option.textContent += ' (Inactivo)';
+                        option.disabled = true;
+                    }
+                    selectDoctor.appendChild(option);
+                });
+                
+                console.log(`✅ ${doctores.length} doctores cargados`);
+            } catch (error) {
+                console.error('Error al cargar doctores:', error);
+                selectDoctor.innerHTML = '<option value="">Error al cargar doctores</option>';
+            }
+        }
+
+        // ========== CARGAR PACIENTES ==========
+        async function cargarPacientes() {
+            try {
+                const response = await fetch(API_URLS.pacientes);
+                if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
+                
+                const data = await response.json();
+                const pacientes = Array.isArray(data) ? data : (data.data || data.value || []);
+                
+                // Limpiar opciones (mantener el placeholder)
+                selectPaciente.innerHTML = '<option value="">Selecciona un paciente...</option>';
+                
+                pacientes.forEach(paciente => {
+                    const option = document.createElement('option');
+                    option.value = paciente.id || paciente.pacienteId;
+                    const nombre = paciente.nombre || paciente.name || 'Sin nombre';
+                    const apellido = paciente.apellido || paciente.lastName || '';
+                    option.textContent = `${nombre} ${apellido}`.trim();
+                    if (paciente.activo === false) {
+                        option.textContent += ' (Inactivo)';
+                        option.disabled = true;
+                    }
+                    selectPaciente.appendChild(option);
+                });
+                
+                console.log(`✅ ${pacientes.length} pacientes cargados`);
+            } catch (error) {
+                console.error('Error al cargar pacientes:', error);
+                selectPaciente.innerHTML = '<option value="">Error al cargar pacientes</option>';
+            }
+        }
+
+        // ========== CARGAR SALAS ==========
+        async function cargarSalas() {
+            try {
+                const response = await fetch(API_URLS.salas);
+                if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
+                
+                const data = await response.json();
+                const salas = Array.isArray(data) ? data : (data.data || data.value || []);
+                
+                // Limpiar opciones (mantener el placeholder)
+                selectSala.innerHTML = '<option value="">Selecciona una sala...</option>';
+                
+                salas.forEach(sala => {
+                    const option = document.createElement('option');
+                    option.value = sala.id || sala.salaId;
+                    const numero = sala.numero || sala.number || 'Sin número';
+                    const tipo = sala.tipo || sala.type || '';
+                    option.textContent = `Sala ${numero}${tipo ? ` (${tipo})` : ''}`;
+                    if (sala.estado !== 'disponible' && sala.estado !== undefined) {
+                        option.textContent += ` - ${sala.estado}`;
+                        if (sala.estado !== 'disponible') {
+                            option.disabled = true;
+                        }
+                    }
+                    selectSala.appendChild(option);
+                });
+                
+                console.log(`✅ ${salas.length} salas cargadas`);
+            } catch (error) {
+                console.error('Error al cargar salas:', error);
+                selectSala.innerHTML = '<option value="">Error al cargar salas</option>';
+            }
+        }
+
+        // ========== CARGAR TODOS LOS DATOS ==========
+        async function cargarTodosLosDatos() {
+            mostrarMensaje('info', '⏳ Cargando datos necesarios...');
+            
+            await Promise.all([
+                cargarDoctores(),
+                cargarPacientes(),
+                cargarSalas()
+            ]);
+            
+            mostrarMensaje('success', '✅ Datos cargados correctamente');
+        }
+
+        // ========== CREAR CITA ==========
+        async function crearCita(event) {
+            event.preventDefault();
+            
+            // Obtener valores
+            const doctorId = selectDoctor.value;
+            const pacienteId = selectPaciente.value;
+            const salaId = selectSala.value;
+            const fecha = fechaInput.value;
+            const hora = horaInput.value;
+            const duracion = parseInt(duracionInput.value);
+            const motivo = motivoInput.value.trim();
+            const estado = estadoInput.value;
+
+            // Validaciones
+            if (!doctorId) {
+                mostrarMensaje('warning', '⚠️ Por favor, selecciona un doctor');
+                return;
+            }
+            if (!pacienteId) {
+                mostrarMensaje('warning', '⚠️ Por favor, selecciona un paciente');
+                return;
+            }
+            if (!salaId) {
+                mostrarMensaje('warning', '⚠️ Por favor, selecciona una sala');
+                return;
+            }
+            if (!fecha) {
+                mostrarMensaje('warning', '⚠️ Por favor, selecciona una fecha');
+                return;
+            }
+            if (!hora) {
+                mostrarMensaje('warning', '⚠️ Por favor, selecciona una hora');
+                return;
+            }
+            if (!duracion || duracion < 10) {
+                mostrarMensaje('warning', '⚠️ La duración debe ser de al menos 10 minutos');
+                return;
+            }
+
+            // Construir objeto de cita
+            const citaData = {
+                doctorId: doctorId,
+                pacienteId: pacienteId,
+                salaId: salaId,
+                fecha: fecha,
+                hora: hora,
+                duracion: duracion,
+                motivo: motivo || null,
+                estado: estado,
+                fechaCreacion: new Date().toISOString()
+            };
+
+            try {
+                mostrarMensaje('info', '⏳ Creando cita...');
+
+                const response = await fetch(API_URLS.citas, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(citaData)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
+                }
+
+                const resultado = await response.json();
+                
+                mostrarMensaje('success', `✅ Cita creada correctamente para el ${fecha} a las ${hora}`);
+                
+                // Limpiar el formulario después de crear
+                form.reset();
+                
+                // Si la cita se creó con un ID, lo mostramos
+                if (resultado.id || resultado.citaId) {
+                    console.log(`Cita creada con ID: ${resultado.id || resultado.citaId}`);
+                }
+
+            } catch (error) {
+                console.error('Error al crear cita:', error);
+                mostrarMensaje('danger', `❌ ${error.message}`);
+            }
+        }
+
+        // ========== EVENTOS ==========
+        form.addEventListener('submit', crearCita);
+
+        // Establecer fecha y hora por defecto
+        function establecerFechaHoraDefecto() {
+            const hoy = new Date();
+            const fechaFormateada = hoy.toISOString().split('T')[0];
+            fechaInput.value = fechaFormateada;
+            
+            // Hora actual redondeada a la hora más cercana
+            const horas = String(hoy.getHours()).padStart(2, '0');
+            const minutos = String(Math.ceil(hoy.getMinutes() / 30) * 30).padStart(2, '0');
+            horaInput.value = `${horas}:${minutos}`;
+        }
+
+        // ========== INICIALIZAR ==========
+        establecerFechaHoraDefecto();
+        cargarTodosLosDatos();
+
+    })();
+</script>
+
+<!-- Estilos adicionales -->
+<style>
+    .form-control:focus, .form-select:focus {
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        border-color: #86b7fe;
+    }
+    .alert {
+        border-radius: 8px;
+    }
+    select option:disabled {
+        color: #6c757d;
+        font-style: italic;
+    }
+</style>
