@@ -1,44 +1,51 @@
-/**
- * Configuración de entidades y sus rutas
- * Citas está comentada (no integrada aún)
- * Salas está activa
- */
+// JS/app.js
+// Configuración de entidades
 const ENTIDADES = {
+    usuarios: {
+        nombre: 'Usuarios',
+        contenedor: 'contenedorUsuarios',
+        archivos: {
+            create: 'Usuario/create.html',
+            read: 'Usuario/read.html',
+            update: 'Usuario/update.html',
+            delete: 'Usuario/delete.html'
+        }
+    },
     doctores: {
         nombre: 'Doctores',
         contenedor: 'contenedorDoctores',
         archivos: {
-            create: 'Doctor/doctor-create.html',
-            read: 'Doctor/doctor-read.html',
-            update: 'Doctor/doctor-update.html',
-            delete: 'Doctor/doctor-delete.html'
+            create: 'Doctor/create.html',
+            read: 'Doctor/read.html',
+            update: 'Doctor/update.html',
+            delete: 'Doctor/delete.html'
         }
     },
     pacientes: {
         nombre: 'Pacientes',
         contenedor: 'contenedorPacientes',
         archivos: {
-            create: 'Paciente/Paciente-create.html',
-            read: 'Paciente/Paciente-read.html',
-            update: 'Paciente/Paciente-update.html',
-            delete: 'Paciente/Paciente-delete.html'
+            create: 'Paciente/create.html',
+            read: 'Paciente/read.html',
+            update: 'Paciente/update.html',
+            delete: 'Paciente/delete.html'
         }
     },
     salas: {
         nombre: 'Salas',
         contenedor: 'contenedorSalas',
         archivos: {
-            create: 'Sala/Sala-create.html',
-            read: 'Sala/Sala-read.html',
-            update: 'Sala/Sala-update.html',
-            delete: 'Sala/Sala-delete.html'
+            create: 'Sala/create.html',
+            read: 'Sala/read.html',
+            update: 'Sala/update.html',
+            delete: 'Sala/delete.html'
         }
     },
     citas: {
         nombre: 'Citas',
         contenedor: 'contenedorCitas',
         archivos: {
-            create: 'Cita/Cita-create.html',
+            create: 'Cita/create.html',
             read: 'Cita/read.html',
             update: 'Cita/update.html',
             delete: 'Cita/delete.html'
@@ -46,9 +53,7 @@ const ENTIDADES = {
     }
 };
 
-/**
- * Carga un formulario HTML desde la carpeta Forms
- */
+// Cargar formulario
 async function cargarFormulario(ruta, contenedorId) {
     try {
         const respuesta = await fetch(`Forms/${ruta}`);
@@ -77,9 +82,7 @@ async function cargarFormulario(ruta, contenedorId) {
     }
 }
 
-/**
- * Genera el HTML del sub-acordeón CRUD para una entidad
- */
+// Generar sub-acordeón CRUD
 function generarSubAcordeonCRUD(entidad) {
     const operaciones = [
         { id: 'create', icono: 'bi-plus-circle-fill', color: 'success', label: 'Crear' },
@@ -125,9 +128,7 @@ function generarSubAcordeonCRUD(entidad) {
     `;
 }
 
-/**
- * Carga todas las entidades y sus formularios CRUD
- */
+// Cargar todas las entidades
 function cargarTodasLasEntidades() {
     Object.entries(ENTIDADES).forEach(([key, entidad]) => {
         const contenedor = document.getElementById(entidad.contenedor);
@@ -138,16 +139,17 @@ function cargarTodasLasEntidades() {
                 const contenedorId = `${entidad.contenedor}${operacion.charAt(0).toUpperCase() + operacion.slice(1)}`;
                 setTimeout(() => {
                     cargarFormulario(ruta, contenedorId);
-                }, 50);
+                }, 100);
             });
         }
     });
 }
 
-// Escuchar eventos de formularios cargados
-document.addEventListener('formLoaded', (event) => {
-    console.log(`✅ Formulario cargado: ${event.detail.ruta}`);
+// Iniciar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar autenticación
+    if (!window.checkAuth()) {
+        return;
+    }
+    cargarTodasLasEntidades();
 });
-
-// Iniciar carga cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', cargarTodasLasEntidades);

@@ -1,20 +1,107 @@
-<!-- Forms -->
-	<div>
-		<h1>Registrar Sala</h1>
+<div>
+    <h5><i class="bi bi-building-plus text-success"></i> Crear Sala</h5>
+    
+    <form id="createSalaForm" class="row g-3">
+        <div class="col-md-6">
+            <label for="numero" class="form-label">Número de Sala</label>
+            <input type="text" class="form-control" id="numero" placeholder="Ej: 101, A-202" required>
+        </div>
+        <div class="col-md-6">
+            <label for="tipo" class="form-label">Tipo de Sala</label>
+            <select class="form-select" id="tipo" required>
+                <option value="">Selecciona un tipo...</option>
+                <option value="consulta">Consulta</option>
+                <option value="cirugia">Cirugía</option>
+                <option value="emergencia">Emergencia</option>
+                <option value="hospitalizacion">Hospitalización</option>
+                <option value="terapia">Terapia</option>
+                <option value="rayos">Rayos X</option>
+                <option value="laboratorio">Laboratorio</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="capacidad" class="form-label">Capacidad</label>
+            <input type="number" class="form-control" id="capacidad" placeholder="Número de personas" min="1" required>
+        </div>
+        <div class="col-md-4">
+            <label for="piso" class="form-label">Piso</label>
+            <input type="text" class="form-control" id="piso" placeholder="Ej: 1, 2, PB">
+        </div>
+        <div class="col-md-4">
+            <label for="estado" class="form-label">Estado</label>
+            <select class="form-select" id="estado" required>
+                <option value="disponible">Disponible</option>
+                <option value="ocupada">Ocupada</option>
+                <option value="mantenimiento">En Mantenimiento</option>
+                <option value="reservada">Reservada</option>
+                <option value="limpieza">En Limpieza</option>
+            </select>
+        </div>
+        <div class="col-12">
+            <label for="equipamiento" class="form-label">Equipamiento</label>
+            <textarea class="form-control" id="equipamiento" rows="2" placeholder="Equipos disponibles en la sala"></textarea>
+        </div>
+        <div class="col-12">
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Crear Sala
+            </button>
+            <button type="reset" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+            </button>
+        </div>
+    </form>
+    <div id="mensajeSala" class="mt-3"></div>
+</div>
 
-			<div>
-				<form class="row g-3">
-				
-                    <!-- Nombre -->
-				<div class="col-6">
-					<label for="inputAddress" class="form-label">Nombre de la sala</label>
-					<input type="text" class="form-control" id="inputAddress" placeholder="Ingresa la sala">
-				</div>
-				
-				<!-- Boton -->
-				<div class="col-12">
-					<button type="submit" class="btn btn-primary">Crear sala</button>
-				</div>
-			</form>
-		</div>
-	</div>
+<script>
+    document.addEventListener('formLoaded', function(e) {
+        if (e.detail.ruta !== 'Sala/create.html') return;
+        
+        const form = document.getElementById('createSalaForm');
+        const mensajeDiv = document.getElementById('mensajeSala');
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const data = {
+                numero: document.getElementById('numero').value.trim(),
+                tipo: document.getElementById('tipo').value,
+                capacidad: parseInt(document.getElementById('capacidad').value),
+                piso: document.getElementById('piso').value.trim() || null,
+                estado: document.getElementById('estado').value,
+                equipamiento: document.getElementById('equipamiento').value.trim() || null
+            };
+
+            if (!data.numero || !data.tipo || !data.capacidad) {
+                mostrarMensaje('warning', '⚠️ Los campos obligatorios (Número, Tipo, Capacidad) son requeridos');
+                return;
+            }
+
+            try {
+                const result = await ApiService.registrarSala(data);
+                mostrarMensaje('success', `✅ Sala "${result.numero}" creada exitosamente`);
+                form.reset();
+                document.getElementById('estado').value = 'disponible';
+            } catch (error) {
+                mostrarMensaje('danger', `❌ ${error.message}`);
+            }
+        });
+
+        function mostrarMensaje(tipo, texto) {
+            const colores = { success: 'success', danger: 'danger', info: 'info', warning: 'warning' };
+            mensajeDiv.innerHTML = `
+                <div class="alert alert-${colores[tipo] || 'info'} alert-dismissible fade show" role="alert">
+                    ${texto}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            setTimeout(() => {
+                const alert = mensajeDiv.querySelector('.alert');
+                if (alert) {
+                    alert.classList.remove('show');
+                    setTimeout(() => mensajeDiv.innerHTML = '', 300);
+                }
+            }, 5000);
+        }
+    });
+</script>
